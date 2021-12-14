@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="LPELayout">
+        <attr name="outerBorderWidth" format="reference|dimension"/>
+        <attr name="outerBorderColor" format="reference|color"/>
+
+        <attr name="mainBorderWidth" format="reference|dimension"/>
+        <attr name="mainBorderColor" format="reference|color"/>
+
+        <attr name="innerBorderWidth" format="reference|dimension"/>
+        <attr name="innerBorderColor" format="reference|color"/>
+
+
+        <attr name="arrowWidth" format="reference|dimension"/>
+        <attr name="arrowHeight" format="reference|dimension"/>
+
+
+    </declare-styleable>
+</resources>
