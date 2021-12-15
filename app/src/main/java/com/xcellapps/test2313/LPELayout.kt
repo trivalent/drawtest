@@ -5,6 +5,7 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.LinearLayout
+import androidx.core.graphics.withClip
 
 class LPELayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
@@ -16,8 +17,8 @@ class LPELayout @JvmOverloads constructor(
     private var mainBorderWidth = 0
     private var drawMainBorder = false
 
-    private var innerBorderWidth = 2.0f
-    private var innerBorderColor = Color.GRAY
+    private var innerBorderWidth = 0
+    private var drawInnerBorder = false
 
     private var innerPadding = 4.0f
 
@@ -31,6 +32,9 @@ class LPELayout @JvmOverloads constructor(
     private var outerBorderPath = Path()
     private var mainBorderPath = Path()
     private var innerBorderPath = Path()
+    private var mArrowPath = Path()
+    private var mainArrowPath = Path()
+    private var innerArrowPath = Path()
 
     private val arrowStartPoint = PointF(0f,0f)
 
@@ -49,6 +53,10 @@ class LPELayout @JvmOverloads constructor(
         val mainBorderColor = typedArray.getColor(R.styleable.LPELayout_mainBorderColor, Color.TRANSPARENT)
         mainBorderWidth = typedArray.getDimensionPixelSize(R.styleable.LPELayout_mainBorderWidth, 0)
         drawMainBorder = mainBorderWidth > 0
+
+        val innerBorderColor = typedArray.getColor(R.styleable.LPELayout_innerBorderColor, Color.TRANSPARENT)
+        innerBorderWidth = typedArray.getDimensionPixelSize(R.styleable.LPELayout_innerBorderWidth, 0)
+        drawInnerBorder = innerBorderWidth > 0
 
         arrowHeight = typedArray.getDimensionPixelSize(R.styleable.LPELayout_arrowHeight, 24)
         arrowWidth = typedArray.getDimensionPixelSize(R.styleable.LPELayout_arrowWidth, 24)
@@ -70,22 +78,31 @@ class LPELayout @JvmOverloads constructor(
 
         innerBorderPaint.apply {
             color = innerBorderColor
-            strokeWidth = innerBorderWidth
+            strokeWidth = innerBorderWidth.toFloat()
+            style = Paint.Style.STROKE
         }
+
+        mArrowPath.moveTo(0f, 0f)
+        mArrowPath.lineTo(arrowWidth/2f, arrowHeight.toFloat())
+        mArrowPath.lineTo(arrowWidth.toFloat(), 0f)
+
+        mainArrowPath.moveTo(0f, 0f)
+        mainArrowPath.lineTo((arrowWidth - outerBorderWidth)/2f, (arrowHeight - outerBorderWidth).toFloat())
+        mainArrowPath.lineTo((arrowWidth - outerBorderWidth).toFloat(), 0f)
+
+        innerArrowPath.moveTo(0f, 0f)
+        innerArrowPath.lineTo((arrowWidth - outerBorderWidth - mainBorderWidth)/2f, (arrowHeight - outerBorderWidth - mainBorderWidth).toFloat())
+        innerArrowPath.lineTo((arrowWidth - outerBorderWidth - mainBorderWidth).toFloat(), 0f)
+
+
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-
-        /// we must now have measured width available to us
-        if(measuredWidth > 0 && measuredHeight > 0) {
-            Log.d("LPELayout", "Measured width $measuredWidth and Measured height $measuredHeight")
-            setMeasuredDimension(
-                (measuredWidth + (2 * outerBorderWidth) + (2 * innerBorderWidth) + (2 * innerPadding)).toInt(),
-                (measuredHeight + (2 * outerBorderWidth) + (2 * innerBorderWidth) + (2 * innerPadding) + arrowHeight).toInt()
-            )
-            Log.d("LPELayout", "Updated measured width $measuredWidth and measured height $measuredHeight")
-        }
+        setMeasuredDimension(
+            (measuredWidth + (2 * outerBorderWidth) + (2 * innerBorderWidth) + (2 * innerPadding)).toInt(),
+            (measuredHeight + (2 * outerBorderWidth) + (2 * innerBorderWidth) + (2 * innerPadding) + arrowHeight).toInt()
+        )
     }
 
     fun setStartPoint(startPoint: PointF) {
@@ -97,69 +114,36 @@ class LPELayout @JvmOverloads constructor(
         mainBorderPath.reset()
         innerBorderPath.reset()
 
+
         ///let's draw our content first
         canvas?.let { drawingCanvas ->
-            var xOffset = (outerBorderWidth/2).toFloat()
-            var yOffset = (outerBorderWidth/2).toFloat()
-
-            val viewHeight = height.toFloat()
-            val viewWidth = width.toFloat()
-            ///decide the position of the arrow
-            val startPosition = 50f
-
-            if(drawOuterBorder) {
-                outerBorderPath.moveTo(0f, yOffset)   //move to beginning
-                //top line
-                outerBorderPath.lineTo(viewWidth - xOffset, yOffset)
-                //right line
-                outerBorderPath.lineTo(viewWidth - xOffset, viewHeight - arrowHeight)
-                //bottom first part
-                outerBorderPath.lineTo(viewWidth - startPosition, viewHeight - arrowHeight)
-                //arrow right part
-                outerBorderPath.lineTo(viewWidth - (startPosition + arrowWidth / 2), viewHeight - outerBorderWidth)
-                //arrow left part
-                outerBorderPath.lineTo(
-                    viewWidth - (startPosition + arrowWidth),
-                    viewHeight - arrowHeight
+            outerBorderPath.addRect(outerBorderWidth.toFloat(),outerBorderWidth.toFloat(),width.toFloat() - outerBorderWidth, (height - arrowHeight - outerBorderWidth).toFloat(), Path.Direction.CW)
+            outerBorderPath.addPath(mArrowPath, width.toFloat() - arrowWidth - 100,
+                (height - arrowHeight - outerBorderWidth).toFloat()
+            )
+            drawingCanvas.drawPath(outerBorderPath, outerBorderPaint)
+            mainBorderPath.addRect(outerBorderWidth + mainBorderWidth.toFloat(),
+            outerBorderWidth + mainBorderWidth.toFloat(),
+                width.toFloat() - outerBorderWidth - mainBorderWidth,
+                (height - arrowHeight - outerBorderWidth - mainBorderWidth).toFloat(),
+                Path.Direction.CW
                 )
-                //bottom second part
-                outerBorderPath.lineTo(xOffset, viewHeight - arrowHeight)
-                //left line
-                outerBorderPath.lineTo(xOffset, yOffset)
 
-                drawingCanvas.drawPath(outerBorderPath, outerBorderPaint)
-            }
-
-//            xOffset = outerBorderWidth/2 + (mainBorderWidth/2).toFloat()
-//            yOffset = outerBorderWidth + (mainBorderWidth/2).toFloat()
-
-
-            if(drawMainBorder) {
-                mainBorderPath.moveTo((outerBorderWidth).toFloat(),
-                    (outerBorderWidth + mainBorderWidth/2).toFloat()
-                )   //move to beginning
-                //top line
-                mainBorderPath.lineTo(viewWidth - outerBorderWidth - mainBorderWidth/2, outerBorderWidth.toFloat() + mainBorderWidth/2)
-                //right line
-                mainBorderPath.lineTo(viewWidth - outerBorderWidth - mainBorderWidth/2, viewHeight - arrowHeight - outerBorderWidth/2 - mainBorderWidth/2)
-
-                //bottom first part
-                mainBorderPath.lineTo(viewWidth - outerBorderWidth/4 - mainBorderWidth/2 - startPosition, viewHeight - arrowHeight - outerBorderWidth/2 - mainBorderWidth/2)
-
-                //arrow right part
-//                 mainBorderPath.lineTo(viewWidth - outerBorderWidth - mainBorderWidth/2  - (startPosition + arrowWidth/2), viewHeight - outerBorderWidth)
-                 mainBorderPath.lineTo(viewWidth - (startPosition + arrowWidth / 2), viewHeight - outerBorderWidth*2 - mainBorderWidth)
-                //arrow left part
-                mainBorderPath.lineTo(
-                    viewWidth - (startPosition + arrowWidth - outerBorderWidth/4 - mainBorderWidth/2 ),
-                    viewHeight - arrowHeight - outerBorderWidth/2 - mainBorderWidth/2
+            mainBorderPath.addPath(mainArrowPath, width.toFloat() - arrowWidth + (outerBorderWidth/2) - 100,
+                (height - arrowHeight - outerBorderWidth - mainBorderWidth).toFloat()
                 )
-                //bottom second part
-                mainBorderPath.lineTo((outerBorderWidth + mainBorderWidth/2).toFloat(), viewHeight - arrowHeight - outerBorderWidth/2 - mainBorderWidth/2)
-                //left line
-                mainBorderPath.lineTo((outerBorderWidth + mainBorderWidth/2).toFloat(), (outerBorderWidth).toFloat())
-                drawingCanvas.drawPath(mainBorderPath, mainBorderPaint)
-            }
+            drawingCanvas.drawPath(mainBorderPath, mainBorderPaint)
+
+            innerBorderPath.addRect(outerBorderWidth + mainBorderWidth + innerBorderWidth.toFloat(),
+                outerBorderWidth + mainBorderWidth*1f + innerBorderWidth,
+                width.toFloat() - outerBorderWidth - mainBorderWidth*1f - innerBorderWidth,
+                (height - arrowHeight - outerBorderWidth - mainBorderWidth*1f - innerBorderWidth).toFloat(),
+                Path.Direction.CW
+                )
+            innerBorderPath.addPath(innerArrowPath, width.toFloat() - arrowWidth + (outerBorderWidth + mainBorderWidth)/2 - 100,
+                (height - arrowHeight - outerBorderWidth - mainBorderWidth - innerBorderWidth).toFloat()
+                )
+            drawingCanvas.drawPath(innerBorderPath, innerBorderPaint)
         }
 
         ///translate canvas to the child can be drawn now

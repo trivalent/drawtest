@@ -10,6 +10,8 @@
 
     <com.xcellapps.test2313.LPELayout
         android:layout_width="0dp"
+        android:padding="0dp"
+        android:layout_margin="0dp"
         android:layout_height="100dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -17,11 +19,13 @@
         android:orientation="vertical"
         android:background="@android:color/transparent"
         app:outerBorderColor="#0f0"
-        app:outerBorderWidth="3dp"
+        app:outerBorderWidth="4dp"
         app:arrowHeight="48dp"
-        app:arrowWidth="48dp"
-        app:mainBorderWidth="1dp"
-        app:mainBorderColor="#00f"
+        app:arrowWidth="60dp"
+        app:mainBorderWidth="4dp"
+        app:mainBorderColor="#f00"
+        app:innerBorderColor="#00f"
+        app:innerBorderWidth="4dp"
         />
 <!--    <androidx.appcompat.widget.LinearLayoutCompat-->
 <!--        android:id="@+id/view1"-->
